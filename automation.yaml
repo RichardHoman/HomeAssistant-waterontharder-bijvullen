@@ -1,0 +1,74 @@
+alias: Waterontharder melding
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - input_button.waterontharder_bijgevuld
+    id: bijgevuld
+  - platform: template
+    value_template: >-
+      {{ ( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) > ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int }}
+    id: verbruik over de bijvulgrens
+  - platform: state
+    entity_id:
+      - sensor.watermeter_total_water_usage
+    id: Waterverbruik
+  - platform: template
+    value_template: >-
+      {{ (( ( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) - ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int)|int) %500 == 0 or (( ( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) - ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int)|int-1) %500 == 0 }}
+    id: 0.5 kuub verbruikt
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: bijgevuld
+        sequence:
+          - service: input_number.set_value
+            data_template:
+              entity_id: input_number.meterstand_water_bij_waterontharder_gevuld
+              value: >-
+                {{ states('sensor.watermeter_total_water_usage')|replace('.','') }}
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id:
+                  - verbruik over de bijvulgrens
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id:
+                      - 0.5 kuub verbruikt
+                  - condition: template
+                    value_template: >-
+                      {{ ( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) > ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int }}
+                alias: Elke 500L na grens
+        sequence:
+          - service: notify.mobile_app_iphone_van_richard
+            data:
+              title: Waterontharder
+              message: De waterontharder moet worden bijgevuld met zout.
+      - conditions:
+          - condition: trigger
+            id:
+              - Waterverbruik
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: switch.achtertuin_water_3_en_4
+                state: "on"
+              - condition: state
+                entity_id: switch.achtertuin_water_3_en_4_2
+                state: "on"
+              - condition: state
+                entity_id: switch.achtertuin_water_1_en_2_2
+                state: "on"
+        sequence:
+          - service: input_number.set_value
+            data_template:
+              value: >-
+                {{ (states('input_number.meterstand_water_bij_waterontharder_gevuld')|float+1)|float }}
+              entity_id: input_number.meterstand_water_bij_waterontharder_gevuld
+mode: queued
+max: 10

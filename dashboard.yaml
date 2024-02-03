@@ -1,0 +1,21 @@
+type: vertical-stack
+cards:
+  - type: custom:mushroom-title-card
+    title: Waterontharder
+    subtitle: ''
+    alignment: center
+  - type: custom:mushroom-template-card
+    primary: Waterverbruik resterend tot bijvullen
+    secondary: >-
+      {{ ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int - ( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) }} liter ({{ 100 - ( 100 *( (states("sensor.watermeter_total_water_usage")|float * 1000 )|int - states("input_number.meterstand_water_bij_waterontharder_gevuld")|int ) / ( states("input_number.waterverbruik_tussen_bijvullen_ontharder")|int * 1000)|int )|int }}%)
+    icon: mdi:water-alert
+    icon_color: blue
+    fill_container: false
+    multiline_secondary: false
+  - type: entities
+    entities:
+      - entity: input_number.waterverbruik_tussen_bijvullen_ontharder
+        secondary_info: none
+        name: Waterverbruik per vulling
+      - entity: input_button.waterontharder_bijgevuld
+    show_header_toggle: true
